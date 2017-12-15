@@ -121,25 +121,47 @@ int main (int argc, char *argv[])
     GstRTSPServer *server;
     GstRTSPMountPoints *mounts;
     GstRTSPMediaFactory *factory;
+    String face_cascade_name, eyes_cascade_name;
+    String inPipe;
+    String outPipe;
 
-    /* init video capture */
-    //cap.open("videotestsrc ! video/x-raw,format=I420,width=640,height=480,framerate=30/1 ! appsink");
-    cap.open("v4l2src device=/dev/video0 ! video/x-raw,format=I420,width=640,height=480,framerate=30/1 ! appsink");
+    cv::String keys =
+        "{i | v4l2src device=/dev/video0 ! video/x-raw,format=I420,width=640,height=480,framerate=30/1 ! appsink | input pipeline}"         
+        "{o | ( appsrc name=mysrc is-live=true ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ) | output pipeline}"
+        "{face_cascade | haarcascade_frontalface_alt.xml | }"
+        "{eyes_cascade | haarcascade_eye_tree_eyeglasses.xml | }");
+        "{help | | show help message}";
 
-    if(!cap.isOpened() /*|| !out.isOpened()*/) {  // check if we succeeded
-        printf("VideoCapture or VideoWriter not opened\n");
-        return -1;
+
+    cv::CommandLineParser parser(argc, argv, keys);
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
     }
 
-    //-- 1. Load the cascades
-    if( !face_cascade.load( "haarcascade_frontalface_alt.xml" ) ) { 
-        printf("--(!)Error loading face cascade\n"); 
+    inPipe = parser.get<String>("i");
+    outPipe = parser.get<String>("o");
+    face_cascade_name = parser.get<string>("face_cascade");
+    eyes_cascade_name = parser.get<string>("eyes_cascade");
+
+    /* Load the cascades */
+    if( !face_cascade.load( face_cascade_name ) ) { 
+        g_print("--(!)Error loading face cascade\n"); 
         return -1; 
     };
-    if( !eyes_cascade.load( "haarcascade_eye_tree_eyeglasses.xml" ) ) { 
-        printf("--(!)Error loading eyes cascade\n"); 
+    if( !eyes_cascade.load( eyes_cascade_name ) ) { 
+        g_print("--(!)Error loading eyes cascade\n"); 
         return -1; 
     };
+
+    /* init video capture */
+    cap.open(inPipe.c_str());
+
+    /* check if we succeeded */
+    if(!cap.isOpened()) {
+        g_print("VideoCapture not opened\n");
+        return -1;
+    }
 
     gst_init (&argc, &argv);
 
@@ -157,8 +179,7 @@ int main (int argc, char *argv[])
      * any launch line works as long as it contains elements named pay%d. Each
      * element with pay%d names will be a stream */
     factory = gst_rtsp_media_factory_new();
-    gst_rtsp_media_factory_set_launch(factory,
-        "( appsrc name=mysrc is-live=true ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
+    gst_rtsp_media_factory_set_launch(factory, outPipe.c_str());
 
     /* notify when our media is ready, This is called whenever someone asks for
      * the media and a new pipeline with our appsrc is created */
