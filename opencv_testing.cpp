@@ -129,7 +129,7 @@ int main (int argc, char *argv[])
         "{i | v4l2src device=/dev/video0 ! video/x-raw,format=I420,width=640,height=480,framerate=30/1 ! appsink | input pipeline}"         
         "{o | ( appsrc name=mysrc is-live=true ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ) | output pipeline}"
         "{face_cascade | haarcascade_frontalface_alt.xml | }"
-        "{eyes_cascade | haarcascade_eye_tree_eyeglasses.xml | }")
+        "{eyes_cascade | haarcascade_eye_tree_eyeglasses.xml | }"
         "{help | | show help message}";
 
 
