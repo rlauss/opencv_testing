@@ -23,7 +23,7 @@ void detectAndDisplay( Mat frame )
     std::vector<Rect> faces;
     Mat frame_gray;
 
-    cvtColor( frame, frame_gray, COLOR_YUV2GRAY_I420 /*COLOR_BGR2GRAY*/ );
+    cvtColor( frame, frame_gray, COLOR_YUV2GRAY_I420 );
     equalizeHist( frame_gray, frame_gray );
 
     //-- Detect faces
@@ -126,10 +126,10 @@ int main (int argc, char *argv[])
     String outPipe;
 
     cv::String keys =
-        "{i | v4l2src device=/dev/video0 ! video/x-raw,format=I420,width=640,height=480,framerate=30/1 ! appsink | input pipeline}"         
-        "{o | ( appsrc name=mysrc is-live=true ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ) | output pipeline}"
-        "{face_cascade | haarcascade_frontalface_alt.xml | }"
-        "{eyes_cascade | haarcascade_eye_tree_eyeglasses.xml | }"
+        "{i | v4l2src ! video/x-raw,format=YUY2,framerate=30/1,width=640,height=480 ! videoconvert ! video/x-raw,format=I420,framerate=30/1,width=640,height=480 ! appsink | input pipeline}"
+        "{o | ( appsrc name=mysrc is-live=true ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 ) | output pipeline}"
+        "{face_cascade | /usr/share/opencv_testing/haarcascade_frontalface_alt.xml | }"
+        "{eyes_cascade | /usr/share/opencv_testing/haarcascade_eye_tree_eyeglasses.xml | }"
         "{help | | show help message}";
 
 
